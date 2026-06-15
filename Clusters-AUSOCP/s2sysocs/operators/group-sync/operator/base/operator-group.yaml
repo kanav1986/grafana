@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1
+spec:
+  targetNamespaces:
+  - group-sync-operator
+  upgradeStrategy: Default
+kind: OperatorGroup
+metadata:
+  generateName: group-sync-operator-
+  generation: 1
+  namespace: group-sync-operator
+  name: group-sync-operator-latest

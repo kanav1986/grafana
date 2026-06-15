@@ -1,0 +1,43 @@
+apiVersion: dynatrace.com/v1beta5
+kind: DynaKube
+metadata:
+  name: s2sysocs-appmonitoring
+  namespace: dynatrace
+  annotations:
+    feature.dynatrace.com/oneagent-privileged: "true"
+
+spec:
+  apiUrl: https://kfu13300.live.dynatrace.com/api
+  
+  tokens: dynakube
+  networkZone: s2sysocs-nz
+
+  proxy:
+    value: http://10.56.24.125:10022
+
+  metadataEnrichment:
+    enabled: true
+
+  trustedCAs: dynatrace-service-ca
+
+  oneAgent:
+    hostGroup: s2sysocs
+    applicationMonitoring:
+      namespaceSelector:
+        matchLabels:
+          dt-monitoring: "true"
+      version: 1.329.73.20260123-140641
+
+  activeGate:
+    group: s2sysocs-group
+    capabilities:
+      - routing
+      - dynatrace-api
+    replicas: 3
+    resources:
+      requests:
+        cpu: 800m
+        memory: 1.8Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi

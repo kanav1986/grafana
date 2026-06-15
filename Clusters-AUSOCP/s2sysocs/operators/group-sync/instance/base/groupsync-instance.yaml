@@ -1,0 +1,48 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: GroupSync
+metadata:
+  name: ad-group-sync
+  namespace: group-sync-operator
+spec:
+  schedule: "0 */6 * * *"   # every 6 hours
+  providers:
+  - ldap:
+      url: ldaps://sdcfismel21.fnfis.com:636/DC=FNFIS,DC=com?sAMAccountName?sub??
+      insecure: false
+      caSecret:
+        name: ad-ca
+        key: ca.crt
+        namespace: group-sync-operator
+      credentialsSecret:
+        name: ad-bind-credentials
+        namespace: group-sync-operator
+      activeDirectory:
+        groupsQuery:
+          baseDN: "OU=Managed Groups,OU=Logical Security,OU=Core Directory Services,DC=FNFIS,DC=com"
+          scope: sub
+          derefAliases: never
+          pageSize: 0
+        usersQuery:
+          baseDN: "OU=Accounts,OU=FIS,DC=FNFIS,DC=com"
+          scope: sub
+          derefAliases: never
+          filter: "(objectClass=person)"
+          pageSize: 0
+        userNameAttributes:
+          - sAMAccountName
+        groupUIDAttribute: dn
+        groupNameAttributes:
+          - cn
+        groupMembershipAttributes:
+          - "memberOf:1.2.840.113556.1.4.1941:"
+      whitelist:
+         - "CN=openshift-au-admin,OU=Managed Groups,OU=Logical Security,OU=Core Directory Services,DC=FNFIS,DC=com"
+         - "CN=openshift-au-l1support,OU=Managed Groups,OU=Logical Security,OU=Core Directory Services,DC=FNFIS,DC=com"
+         - "CN=openshift-au-sre,OU=Managed Groups,OU=Logical Security,OU=Core Directory Services,DC=FNFIS,DC=com"
+         - "CN=openshift-au-devops,OU=Managed Groups,OU=Logical Security,OU=Core Directory Services,DC=FNFIS,DC=com"
+      groupUIDNameMapping:
+        "CN=openshift-au-admin,OU=Managed Groups,OU=Logical Security,OU=Core Directory Services,DC=FNFIS,DC=com": openshift-au-admin
+        "CN=openshift-au-l1support,OU=Managed Groups,OU=Logical Security,OU=Core Directory Services,DC=FNFIS,DC=com": openshift-au-pmc
+        "CN=openshift-au-sre,OU=Managed Groups,OU=Logical Security,OU=Core Directory Services,DC=FNFIS,DC=com": openshift-au-sre
+        "CN=openshift-au-devops,OU=Managed Groups,OU=Logical Security,OU=Core Directory Services,DC=FNFIS,DC=com": openshift-au-deployment
+    name: ldap

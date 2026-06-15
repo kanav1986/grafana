@@ -1,0 +1,106 @@
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: vector-to-splunk
+  namespace: openshift-logging
+spec:
+  collector:
+    resources:
+      limits:
+        cpu: '2'
+        memory: 2G
+      requests:
+        cpu: 250m
+        memory: 100Mi
+  filters:
+  - name: prune-filter
+    type: prune
+    prune:
+      in: [.kubernetes.annotations, .kubernetes.container_id, .kubernetes.container_image_id, .kubernetes.container_iostream, .kubernetes.namespace_id, .kubernetes.namespace_labels]
+  inputs:
+    - application:
+        includes:
+          - namespace: cop-sys-au
+      name: cop-sys-au
+      type: application
+    - application:
+        includes:
+          - namespace: sys-mms-au
+      name: sys-mms-au
+      type: application
+    - application:
+        includes:
+          - namespace: sys-mpir-au
+      name: sys-mpir-au
+      type: application
+  managementState: Managed
+  outputs:
+    - name: openshift-logforward-syslog
+      syslog:
+        rfc: RFC5424
+        url: 'udp://10.56.24.52:514'
+      type: syslog
+    - name: splunk-receiver1
+      splunk:
+        authentication:
+          token:
+            key: hecToken
+            secretName: vector2splunk-cop
+        url: 'https://splunkhectstm1.fnfis.com:8088'
+      tls:
+        ca:
+          key: ca-bundle.crt
+          secretName: vector2splunk-cop
+      type: splunk
+    - name: splunk-receiver2
+      splunk:
+        authentication:
+          token:
+            key: hecToken
+            secretName: vector2splunk-mps
+        url: 'https://splunkhectstm1.fnfis.com:8088'
+      tls:
+        ca:
+          key: ca-bundle.crt
+          secretName: vector2splunk-mps
+      type: splunk
+    - name: splunk-receiver3
+      splunk:
+        authentication:
+          token:
+            key: hecToken
+            secretName: vector2splunk-mps
+        url: 'https://splunkhectstm1.fnfis.com:8088'
+      tls:
+        ca:
+          key: ca-bundle.crt
+          secretName: vector2splunk-mps
+      type: splunk
+  pipelines:
+    - inputRefs:
+        - cop-sys-au
+      name: cop-sys-pipeline
+      outputRefs:
+        - splunk-receiver1
+      filterRefs: ["prune-filter"]
+    - inputRefs:
+        - sys-mms-au
+      name: sys-mms-pipeline
+      outputRefs:
+        - splunk-receiver2
+      filterRefs: ["prune-filter"]
+    - inputRefs:
+        - sys-mpir-au
+      name: sys-mpir-pipeline
+      outputRefs:
+        - splunk-receiver3
+      filterRefs: ["prune-filter"]
+    - inputRefs:
+        - application
+        - infrastructure
+      name: infra-logs
+      outputRefs:
+        - openshift-logforward-syslog
+  serviceAccount:
+    name: vector2splunk
+
